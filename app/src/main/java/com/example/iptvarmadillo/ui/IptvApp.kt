@@ -69,9 +69,11 @@ fun IptvApp(viewModel: IptvViewModel) {
             )
             Destination.Player -> PlayerScreen(
                 channelName = state.playerChannelName,
+                streamUrl = state.playerStreamUrl,
                 group = state.playerGroup,
                 index = state.playerIndex,
                 count = state.playerCount,
+                channels = state.channels,
                 canPrevious = state.canPrevious,
                 canNext = state.canNext,
                 error = state.playerError,
@@ -79,6 +81,7 @@ fun IptvApp(viewModel: IptvViewModel) {
                 onBack = viewModel::back,
                 onPrevious = viewModel::previousChannel,
                 onNext = viewModel::nextChannel,
+                onTune = viewModel::tune,
                 onRetry = viewModel::retryPlayback,
                 player = viewModel::playerOrNull,
                 onHostStop = viewModel::onHostStop,

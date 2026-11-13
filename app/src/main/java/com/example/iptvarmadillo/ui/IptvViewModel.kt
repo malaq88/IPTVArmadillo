@@ -83,6 +83,7 @@ data class IptvUiState(
     val draftError: String? = null,
     val pendingDeleteId: String? = null,
     val playerChannelName: String = "",
+    val playerStreamUrl: String = "",
     val playerGroup: String = "",
     val playerIndex: Int = 0,
     val playerCount: Int = 0,
@@ -100,7 +101,7 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
     val state: StateFlow<IptvUiState> = _state.asStateFlow()
 
     private var player: ExoPlayer? = null
-    private var boundHeaders: String? = null
+    private var httpFactory: DefaultHttpDataSource.Factory? = null
     private var zapList: List<Channel> = emptyList()
     private var zapIndex: Int = 0
     private var activeUserAgent: String = ""
@@ -381,9 +382,7 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
     fun play(index: Int) {
         val list = _state.value.visibleChannels
         if (index !in list.indices) return
-        val channelAgent = list.mapNotNull { it.userAgent?.trim()?.takeIf(String::isNotEmpty) }.toSet()
-        val userAgent = effectiveUserAgent(activeUserAgent.ifBlank { channelAgent.singleOrNull() })
-        val exoPlayer = ensurePlayer(userAgent, activeReferer)
+        val exoPlayer = ensurePlayer()
         zapList = list
         zapIndex = index
         _state.update {
@@ -393,6 +392,25 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
                 playerErrorDetail = null,
                 playerBusy = true,
                 playerCount = list.size,
+            )
+        }
+        startCurrentChannel(exoPlayer)
+    }
+
+    fun tune(channel: Channel) {
+        val source = _state.value.channels
+        val index = source.indexOfFirst { it.streamUrl == channel.streamUrl && it.name == channel.name }
+        if (index < 0) return
+        val exoPlayer = ensurePlayer()
+        zapList = source
+        zapIndex = index
+        _state.update {
+            it.copy(
+                destination = Destination.Player,
+                playerError = null,
+                playerErrorDetail = null,
+                playerBusy = true,
+                playerCount = source.size,
             )
         }
         startCurrentChannel(exoPlayer)
@@ -587,21 +605,15 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun ensurePlayer(userAgent: String, referer: String): ExoPlayer {
-        val headers = "$userAgent\n$referer"
-        val existing = player
-        if (existing != null && boundHeaders == headers) return existing
-        existing?.release()
-        val requestHeaders = buildMap {
-            put("Accept", "*/*")
-            if (referer.isNotBlank()) put("Referer", referer)
-        }
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent(userAgent)
+    private fun ensurePlayer(): ExoPlayer {
+        player?.let { return it }
+        val factory = DefaultHttpDataSource.Factory()
+            .setUserAgent(effectiveUserAgent(activeUserAgent))
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(25_000)
-            .setDefaultRequestProperties(requestHeaders)
+            .setDefaultRequestProperties(mapOf("Accept" to "*/*"))
+        httpFactory = factory
         val extractorsFactory = DefaultExtractorsFactory()
             .setTsExtractorFlags(
                 DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES or
@@ -613,23 +625,41 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
             .build()
         return ExoPlayer.Builder(getApplication())
             .setLoadControl(loadControl)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory, extractorsFactory))
+            .setMediaSourceFactory(DefaultMediaSourceFactory(factory, extractorsFactory))
             .build()
             .also { created ->
                 created.addListener(playerListener)
                 player = created
-                boundHeaders = headers
             }
+    }
+
+    private fun applyRequestHeaders(channel: Channel) {
+        val userAgent = effectiveUserAgent(activeUserAgent.ifBlank { channel.userAgent })
+        val headers = buildMap {
+            put("Accept", "*/*")
+            if (activeReferer.isNotBlank()) put("Referer", activeReferer)
+        }
+        httpFactory?.setUserAgent(userAgent)?.setDefaultRequestProperties(headers)
     }
 
     private fun startCurrentChannel(exoPlayer: ExoPlayer) {
         val channel = zapList.getOrNull(zapIndex) ?: return
-        exoPlayer.stop()
-        exoPlayer.setMediaItem(channel.toMediaItem(zapIndex), /* resetPosition = */ true)
-        exoPlayer.prepare()
-        exoPlayer.playWhenReady = true
-        publishTransport(clearError = true)
-        _state.update { it.copy(playerBusy = true) }
+        try {
+            applyRequestHeaders(channel)
+            exoPlayer.setMediaItem(channel.toMediaItem(zapIndex), /* resetPosition = */ true)
+            exoPlayer.prepare()
+            exoPlayer.playWhenReady = true
+            publishTransport(clearError = true)
+            _state.update { it.copy(playerBusy = true) }
+        } catch (error: Exception) {
+            _state.update {
+                it.copy(
+                    playerBusy = false,
+                    playerError = getString(R.string.playback_error),
+                    playerErrorDetail = error.javaClass.simpleName,
+                )
+            }
+        }
     }
 
     private fun publishTransport(clearError: Boolean) {
@@ -637,6 +667,7 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
         _state.update {
             it.copy(
                 playerChannelName = channel?.name ?: it.playerChannelName,
+                playerStreamUrl = channel?.streamUrl ?: it.playerStreamUrl,
                 playerGroup = channel?.group ?: it.playerGroup,
                 playerIndex = zapIndex,
                 playerCount = zapList.size,
@@ -651,7 +682,7 @@ class IptvViewModel(app: Application) : AndroidViewModel(app) {
     private fun releasePlayer() {
         player?.release()
         player = null
-        boundHeaders = null
+        httpFactory = null
         zapList = emptyList()
         zapIndex = 0
         resumeOnReturn = false

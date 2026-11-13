@@ -38,6 +38,11 @@
     <string name="previous_channel">Canal anterior</string>
     <string name="next_channel">Próximo canal</string>
     <string name="back">Voltar</string>
+    <string name="your_lists">Suas listas</string>
+    <string name="channel_guide">Canais</string>
+    <string name="show_guide">Mostrar lista de canais</string>
+    <string name="hide_guide">Fechar lista de canais</string>
+    <string name="now_playing">No ar</string>
     <string name="channel_logo">Logotipo do canal</string>
     <string name="source_hint">Use a URL ou um arquivo. Escolher um arquivo limpa a URL, e o contrário também.</string>
     <plurals name="channel_count">
