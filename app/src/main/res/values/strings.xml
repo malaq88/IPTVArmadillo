@@ -1,0 +1,47 @@
+<resources>
+    <string name="app_name">IPTV Armadillo</string>
+    <string name="empty_title">Nenhuma lista ainda</string>
+    <string name="empty_body">Adicione uma lista M3U, M3U8, PLS ou um arquivo com uma URL por linha. Cada item vira um canal. As listas ficam só neste aparelho.</string>
+    <string name="add_playlist">Adicionar lista</string>
+    <string name="playlist_name">Nome da lista</string>
+    <string name="playlist_url">URL da lista</string>
+    <string name="choose_file">Escolher arquivo</string>
+    <string name="headers_hint">Opcional. Preencha só se o seu provedor exigir.</string>
+    <string name="user_agent">User-Agent</string>
+    <string name="referer">Referer</string>
+    <string name="save">Salvar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="remove">Remover</string>
+    <string name="refresh">Atualizar</string>
+    <string name="remove_title">Remover lista</string>
+    <string name="remove_body">Remover \"%1$s\" do app? O arquivo de origem não é apagado.</string>
+    <string name="local_file">Arquivo local</string>
+    <string name="remote_list">Lista remota</string>
+    <string name="search_channels">Buscar canal</string>
+    <string name="clear_search">Limpar busca</string>
+    <string name="all_groups">Todos</string>
+    <string name="no_results">Nenhum canal com esse filtro.</string>
+    <string name="need_source">Informe a URL ou escolha um arquivo.</string>
+    <string name="bad_url">URL inválida. Use um endereço http ou https.</string>
+    <string name="nothing_found">Nenhum canal encontrado nessa lista.</string>
+    <string name="too_large">A lista passa de 32 MB.</string>
+    <string name="http_status">O servidor respondeu HTTP %1$d.</string>
+    <string name="load_failed">Não foi possível carregar a lista.</string>
+    <string name="generic_error">Algo deu errado.</string>
+    <string name="read_failed">Não foi possível ler o arquivo. Escolha de novo.</string>
+    <string name="added">Lista adicionada.</string>
+    <string name="updated">Lista atualizada.</string>
+    <string name="truncated">A lista foi limitada a 100.000 canais.</string>
+    <string name="playback_error">Não foi possível reproduzir este canal.</string>
+    <string name="playback_rejected">O servidor recusou este canal. Se o provedor exigir um User-Agent, preencha esse campo na lista e atualize.</string>
+    <string name="retry">Tentar de novo</string>
+    <string name="previous_channel">Canal anterior</string>
+    <string name="next_channel">Próximo canal</string>
+    <string name="back">Voltar</string>
+    <string name="channel_logo">Logotipo do canal</string>
+    <string name="source_hint">Use a URL ou um arquivo. Escolher um arquivo limpa a URL, e o contrário também.</string>
+    <plurals name="channel_count">
+        <item quantity="one">%d canal</item>
+        <item quantity="other">%d canais</item>
+    </plurals>
+</resources>
